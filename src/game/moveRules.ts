@@ -22,7 +22,8 @@ export function normalizeMove(move: ChessJsMove): Move {
     from: move.from as Square,
     to: move.to as Square,
     san: move.san,
-    promotion: move.promotion ? promotionTypeMap[move.promotion] : undefined
+    promotion: move.promotion ? promotionTypeMap[move.promotion] : undefined,
+    captured: move.captured ? pieceTypeMap[move.captured] : undefined
   };
 }
 

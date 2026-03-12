@@ -2,6 +2,12 @@ import "./../styles.css";
 import { ChessEngine } from "./game/gameState";
 import { BoardView } from "./ui/boardView";
 import { WsClient } from "./network/wsClient";
+import {
+  showCaptureBurst,
+  showCheckEffect,
+  showGameOverEffect,
+  hideGameOverEffect
+} from "./ui/effects";
 import type { ServerMessage } from "../server/types/messages";
 import type { Move, PlayerColor, RoomState, Square } from "./types/chess";
 
@@ -77,6 +83,30 @@ function refreshView(): void {
 
   turnValue.textContent = colorLabel(currentState.turn);
   resultValue.textContent = currentState.result?.reason ?? "进行中";
+
+  // Show check effect on the king square
+  const boardGrid = boardRoot.querySelector<HTMLElement>(".board-grid");
+  if (boardGrid) {
+    showCheckEffect(boardGrid, currentState);
+  }
+}
+
+/**
+ * Trigger visual effects after a move (capture burst, game over celebration).
+ */
+function triggerMoveEffects(move: Move): void {
+  const boardGrid = boardRoot.querySelector<HTMLElement>(".board-grid");
+
+  // Capture burst effect
+  if (boardGrid && move.captured) {
+    showCaptureBurst(boardGrid, move.to);
+  }
+
+  // Game over celebration
+  if (currentState.result) {
+    // Slight delay so the board renders the final position first
+    setTimeout(() => showGameOverEffect(currentState), 350);
+  }
 }
 
 function isBoardInteractive(): boolean {
@@ -265,6 +295,11 @@ function handleServerMessage(message: ServerMessage): void {
       }
 
       refreshView();
+
+      // Trigger effects for the opponent's move
+      if (currentState.lastMove) {
+        triggerMoveEffects(currentState.lastMove);
+      }
       break;
     }
 
@@ -310,6 +345,11 @@ function handleServerMessage(message: ServerMessage): void {
       clearSelection();
       setStatus(`对局结束：${currentState.result?.reason ?? "未知"}`);
       refreshView();
+
+      // Trigger game over celebration
+      if (currentState.result) {
+        setTimeout(() => showGameOverEffect(currentState), 350);
+      }
       break;
     }
 
@@ -379,6 +419,9 @@ function handleSquareClick(square: Square): void {
   }
 
   refreshView();
+
+  // Trigger visual effects (capture burst, game over, etc.)
+  triggerMoveEffects(result.move);
 }
 
 // --- Event bindings ---
@@ -468,6 +511,7 @@ newGameButton.addEventListener("click", () => {
 
   currentState = engine.reset();
   clearSelection();
+  hideGameOverEffect();
   setStatus("");
   refreshView();
   updateRoomUI();

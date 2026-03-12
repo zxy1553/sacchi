@@ -81,6 +81,7 @@ export interface Move {
   to: Square;
   promotion?: PromotionPiece;
   san?: string;
+  captured?: PieceType;
 }
 
 export interface BoardPiece {
