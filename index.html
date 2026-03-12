@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Chess</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="app-header">
+        <div>
+          <h1>Web Chess</h1>
+          <p id="app-subtitle">本地双人国际象棋</p>
+        </div>
+        <div class="header-actions">
+          <button id="new-game-button" type="button">重新开始</button>
+        </div>
+      </section>
+
+      <!-- Mode / Connection panel -->
+      <section class="mode-panel panel">
+        <div class="mode-row">
+          <label>
+            模式：
+            <select id="mode-select">
+              <option value="local">本地对弈</option>
+              <option value="online">联机对弈</option>
+            </select>
+          </label>
+          <span id="connection-status" class="connection-badge disconnected" hidden>未连接</span>
+        </div>
+
+        <!-- Online controls (hidden when local) -->
+        <div id="online-controls" class="online-controls" hidden>
+          <div class="online-row">
+            <label>
+              服务器：
+              <input id="server-url" type="text" placeholder="ws://host:port" />
+              <script>
+                // Auto-detect WebSocket URL based on current page hostname
+                document.getElementById('server-url').value =
+                  'ws://' + location.hostname + ':8787';
+              </script>
+            </label>
+            <button id="connect-button" type="button">连接</button>
+          </div>
+          <div class="online-row online-room-actions">
+            <div class="room-action-group">
+              <button id="create-room-button" type="button" disabled>创建新房间</button>
+            </div>
+            <span class="room-action-divider">或</span>
+            <div class="room-action-group">
+              <input id="join-room-input" type="text" placeholder="输入房间号（如 ABC123）" maxlength="6" style="text-transform:uppercase;width:160px" />
+              <button id="join-room-button" type="button" disabled>加入房间</button>
+            </div>
+          </div>
+          <div id="room-info" class="room-info" hidden>
+            <span>房间：<strong id="room-id-value" class="room-id-highlight">—</strong>
+              <button id="copy-room-id" type="button" class="copy-btn" title="复制房间号">📋</button>
+            </span>
+            <span>你的颜色：<strong id="player-color-value">—</strong></span>
+            <span>对手：<strong id="opponent-status-value">等待中…</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="game-status panel">
+        <span>回合：<strong id="turn-value">白方</strong></span>
+        <span>结果：<strong id="result-value">进行中</strong></span>
+        <span id="status-message" class="status-message"></span>
+      </section>
+
+      <section class="board-panel panel">
+        <div id="board-root" class="board-root"></div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
