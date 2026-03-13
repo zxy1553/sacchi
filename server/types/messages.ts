@@ -49,6 +49,7 @@ export type ClientMessage =
   | MessageEnvelope<"playerMove", PlayerMovePayload>
   | MessageEnvelope<"requestSync", RequestSyncPayload>
   | MessageEnvelope<"leaveRoom", LeaveRoomPayload>
+  | MessageEnvelope<"listRooms", Record<string, never>>
   | MessageEnvelope<"ping", Record<string, never>>;
 
 export interface RoomCreatedPayload {
@@ -88,6 +89,17 @@ export interface ErrorPayload {
   reason: string;
 }
 
+export interface RoomListItem {
+  roomId: string;
+  status: string;
+  playerCount: number;
+  createdAt: number;
+}
+
+export interface RoomListPayload {
+  rooms: RoomListItem[];
+}
+
 export type ServerMessage =
   | MessageEnvelope<"roomCreated", RoomCreatedPayload>
   | MessageEnvelope<"roomJoined", RoomJoinedPayload>
@@ -96,6 +108,7 @@ export type ServerMessage =
   | MessageEnvelope<"stateSynced", StateSyncedPayload>
   | MessageEnvelope<"playerPresenceUpdated", PlayerPresenceUpdatedPayload>
   | MessageEnvelope<"gameOver", GameOverPayload>
+  | MessageEnvelope<"roomList", RoomListPayload>
   | MessageEnvelope<"error", ErrorPayload>
   | MessageEnvelope<"pong", Record<string, never>>;
 
@@ -107,6 +120,7 @@ export const serverMessageTypes = [
   "stateSynced",
   "playerPresenceUpdated",
   "gameOver",
+  "roomList",
   "error",
   "pong"
 ] as const;

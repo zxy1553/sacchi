@@ -16,7 +16,7 @@ import {
   loadOnlineSession,
   clearOnlineSession
 } from "./storage/persistence";
-import type { ServerMessage } from "../server/types/messages";
+import type { ServerMessage, RoomListItem } from "../server/types/messages";
 import type { Move, PlayerColor, RoomState, Square } from "./types/chess";
 
 type Mode = "local" | "online";
@@ -43,6 +43,9 @@ const serverErrorText = requireElement<HTMLElement>("#server-error-text");
 const createRoomButton = requireElement<HTMLButtonElement>("#create-room-button");
 const joinRoomInput = requireElement<HTMLInputElement>("#join-room-input");
 const joinRoomButton = requireElement<HTMLButtonElement>("#join-room-button");
+const roomLobby = requireElement<HTMLElement>("#room-lobby");
+const roomListContainer = requireElement<HTMLElement>("#room-list");
+const refreshRoomsButton = requireElement<HTMLButtonElement>("#refresh-rooms-button");
 const roomInfoPanel = requireElement<HTMLElement>("#room-info");
 const roomIdValue = requireElement<HTMLElement>("#room-id-value");
 const playerColorValue = requireElement<HTMLElement>("#player-color-value");
@@ -234,6 +237,53 @@ function enableRoomButtons(enabled: boolean): void {
   joinRoomButton.disabled = !enabled;
 }
 
+// --- Room Lobby ---
+
+function requestRoomList(): void {
+  if (wsClient && wsClient.connectionState === "connected") {
+    wsClient.listRooms();
+  }
+}
+
+function renderRoomList(rooms: RoomListItem[]): void {
+  roomListContainer.innerHTML = "";
+
+  if (rooms.length === 0) {
+    roomListContainer.innerHTML =
+      '<p class="room-list-empty">暂无房间，点击「创建新房间」开始对局</p>';
+    return;
+  }
+
+  for (const room of rooms) {
+    const item = document.createElement("div");
+    item.className = "room-list-item";
+
+    const statusLabel = room.status === "waiting" ? "等待中" : "对局中";
+    const statusClass = room.status === "waiting" ? "room-status-waiting" : "room-status-playing";
+    const canJoin = room.status === "waiting" && room.playerCount < 2 && !currentRoomState;
+
+    item.innerHTML = `
+      <span class="room-id">${room.roomId}</span>
+      <span class="room-meta">
+        <span class="${statusClass}">${statusLabel}</span>
+        · ${room.playerCount}/2 人
+      </span>
+      <button class="join-btn" ${canJoin ? "" : "disabled"}>${canJoin ? "加入" : room.playerCount >= 2 ? "已满" : "对局中"}</button>
+    `;
+
+    const joinBtn = item.querySelector<HTMLButtonElement>(".join-btn")!;
+    if (canJoin) {
+      joinBtn.addEventListener("click", () => {
+        if (wsClient && wsClient.connectionState === "connected") {
+          wsClient.joinRoom(room.roomId);
+        }
+      });
+    }
+
+    roomListContainer.appendChild(item);
+  }
+}
+
 // --- WebSocket ---
 
 function connectToServer(): void {
@@ -261,14 +311,24 @@ function connectToServer(): void {
         enableRoomButtons(true);
         serverErrorRow.hidden = true;
         setStatus("已连接到服务器，可以创建或加入房间了");
+        // Show lobby and auto-fetch room list
+        roomLobby.hidden = false;
+        requestRoomList();
+        // If we have a room context, re-sync
+        if (wsClient && wsClient.currentRoomId) {
+          wsClient.requestSync(wsClient.currentRoomId);
+        }
       } else if (state === "disconnected") {
         enableRoomButtons(false);
+        roomLobby.hidden = true;
         // Show reconnect UI if we weren't intentionally disconnecting
         if (mode === "online") {
           serverErrorText.textContent = `无法连接到 ${serverUrlInput.value.trim()}`;
           serverErrorRow.hidden = false;
           setStatus("连接已断开，请重试");
         }
+      } else if (state === "connecting") {
+        setStatus("正在连接服务器…");
       }
     },
     onError: (error) => {
@@ -295,9 +355,10 @@ function handleServerMessage(message: ServerMessage): void {
         currentState = engine.loadState(currentRoomState.gameState);
       }
 
-      // Disable room buttons after creating
+      // Disable room buttons after creating, hide lobby
       createRoomButton.disabled = true;
       joinRoomButton.disabled = true;
+      roomLobby.hidden = true;
 
       updateRoomUI();
       clearSelection();
@@ -317,9 +378,10 @@ function handleServerMessage(message: ServerMessage): void {
         currentState = engine.loadState(currentRoomState.gameState);
       }
 
-      // Disable room buttons after joining
+      // Disable room buttons after joining, hide lobby
       createRoomButton.disabled = true;
       joinRoomButton.disabled = true;
+      roomLobby.hidden = true;
 
       updateRoomUI();
       clearSelection();
@@ -409,6 +471,11 @@ function handleServerMessage(message: ServerMessage): void {
 
     case "pong":
       break;
+
+    case "roomList": {
+      renderRoomList(message.payload.rooms);
+      break;
+    }
   }
 }
 
@@ -484,6 +551,11 @@ connectButton.addEventListener("click", () => {
   connectToServer();
 });
 
+// Refresh room list
+refreshRoomsButton.addEventListener("click", () => {
+  requestRoomList();
+});
+
 createRoomButton.addEventListener("click", () => {
   if (!wsClient || wsClient.connectionState !== "connected") {
     return;
@@ -551,6 +623,13 @@ newGameButton.addEventListener("click", () => {
 
     resetOnlineState();
     clearOnlineSession();
+
+    // Re-enable room buttons and show lobby if connected
+    if (wsClient && wsClient.connectionState === "connected") {
+      enableRoomButtons(true);
+      roomLobby.hidden = false;
+      requestRoomList();
+    }
   }
 
   currentState = engine.reset();

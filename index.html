@@ -53,6 +53,17 @@
               <button id="join-room-button" type="button" disabled>加入房间</button>
             </div>
           </div>
+
+          <!-- Room lobby: available rooms -->
+          <div id="room-lobby" class="room-lobby" hidden>
+            <div class="room-lobby-header">
+              <span class="lobby-title">🏠 当前房间</span>
+              <button id="refresh-rooms-button" type="button" class="refresh-btn" title="刷新房间列表">🔄 刷新</button>
+            </div>
+            <div id="room-list" class="room-list">
+              <p class="room-list-empty">暂无房间，点击「创建新房间」开始对局</p>
+            </div>
+          </div>
           <div id="room-info" class="room-info" hidden>
             <span>房间：<strong id="room-id-value" class="room-id-highlight">—</strong>
               <button id="copy-room-id" type="button" class="copy-btn" title="复制房间号">📋</button>

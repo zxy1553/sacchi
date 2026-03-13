@@ -98,6 +98,25 @@ export class RoomManager {
     return this.rooms.get(roomId);
   }
 
+  /** Return rooms that are visible in the lobby (waiting or playing, not finished). */
+  listRooms(): Array<{ roomId: string; status: string; playerCount: number; createdAt: number }> {
+    const result: Array<{ roomId: string; status: string; playerCount: number; createdAt: number }> = [];
+    for (const room of this.rooms.values()) {
+      // Only show non-finished rooms
+      if (room.status !== "finished") {
+        result.push({
+          roomId: room.roomId,
+          status: room.status,
+          playerCount: room.players.length,
+          createdAt: room.createdAt
+        });
+      }
+    }
+    // Most recent first
+    result.sort((a, b) => b.createdAt - a.createdAt);
+    return result;
+  }
+
   markDisconnected(playerId: string): ServerRoomState | undefined {
     for (const room of this.rooms.values()) {
       const player = room.players.find((entry) => entry.playerId === playerId);

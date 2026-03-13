@@ -227,6 +227,14 @@ export class MessageHandlers {
         sendMessage(socket, createEnvelope("pong", requestId, roomId, playerId, {}));
         return;
       }
+      case "listRooms": {
+        const rooms = this.roomManager.listRooms();
+        sendMessage(
+          socket,
+          createEnvelope("roomList", requestId, null, playerId, { rooms })
+        );
+        return;
+      }
       default: {
         sendError(socket, requestId, roomId, playerId, "INVALID_MESSAGE", "Unsupported message type.");
       }
