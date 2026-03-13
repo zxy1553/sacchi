@@ -555,6 +555,28 @@ select {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
+/* --- Drag and Drop --- */
+
+.square[draggable="true"] {
+  cursor: grab;
+}
+
+.square[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.square.dragging {
+  opacity: 0.4;
+  outline: 3px solid #22c55e;
+  outline-offset: -3px;
+}
+
+.square.drop-target {
+  outline: 3px dashed #60a5fa;
+  outline-offset: -3px;
+  background: rgba(59, 130, 246, 0.25) !important;
+}
+
 /* --- Coordinate labels --- */
 
 .file-label,
