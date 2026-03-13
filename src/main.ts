@@ -8,6 +8,14 @@ import {
   showGameOverEffect,
   hideGameOverEffect
 } from "./ui/effects";
+import {
+  saveLocalGame,
+  loadLocalGame,
+  clearLocalGame,
+  saveOnlineSession,
+  loadOnlineSession,
+  clearOnlineSession
+} from "./storage/persistence";
 import type { ServerMessage } from "../server/types/messages";
 import type { Move, PlayerColor, RoomState, Square } from "./types/chess";
 
@@ -61,6 +69,26 @@ let myPlayerId: string | null = null;
 let myColor: PlayerColor | null = null;
 let currentRoomState: RoomState | null = null;
 
+// --- Persistence helpers ---
+
+function persistCurrentGame(): void {
+  if (mode === "local") {
+    // Only persist if there are actual moves
+    if (currentState.moveHistory.length > 0) {
+      saveLocalGame(currentState);
+    }
+  } else if (mode === "online" && currentRoomState && myPlayerId && myColor) {
+    const serverUrl = serverUrlInput.value.trim();
+    saveOnlineSession(
+      serverUrl,
+      currentRoomState.roomId,
+      myPlayerId,
+      myColor,
+      currentState
+    );
+  }
+}
+
 // --- UI helpers ---
 
 function setStatus(text: string): void {
@@ -89,6 +117,9 @@ function refreshView(): void {
   if (boardGrid) {
     showCheckEffect(boardGrid, currentState);
   }
+
+  // Auto-save after every render
+  persistCurrentGame();
 }
 
 /**
@@ -507,15 +538,58 @@ newGameButton.addEventListener("click", () => {
     }
 
     resetOnlineState();
+    clearOnlineSession();
   }
 
   currentState = engine.reset();
   clearSelection();
   hideGameOverEffect();
+  clearLocalGame();
   setStatus("");
   refreshView();
   updateRoomUI();
 });
 
-// --- Init ---
+// --- Init: restore saved game on page load ---
+
+function restoreSavedGame(): void {
+  // Try to restore online session first
+  const onlineSave = loadOnlineSession();
+  if (onlineSave) {
+    // Restore online session: switch to online mode, reconnect
+    modeSelect.value = "online";
+    setMode("online");
+
+    serverUrlInput.value = onlineSave.serverUrl;
+
+    // Restore the game state immediately so user sees the board
+    currentState = engine.loadState(onlineSave.gameState);
+    myPlayerId = onlineSave.playerId;
+    myColor = onlineSave.myColor;
+
+    setStatus("正在重新连接服务器…");
+    refreshView();
+
+    // Auto-reconnect to server
+    connectToServer();
+    return;
+  }
+
+  // Try to restore local game
+  const localSave = loadLocalGame();
+  if (localSave) {
+    // Only restore if the game is still in progress (has moves but no result)
+    if (localSave.gameState.moveHistory.length > 0) {
+      currentState = engine.loadState(localSave.gameState);
+      const moveCount = currentState.moveHistory.length;
+      if (currentState.result) {
+        setStatus(`已恢复对局（${moveCount} 步） — 对局已结束：${currentState.result.reason}`);
+      } else {
+        setStatus(`已恢复上次对局（${moveCount} 步），继续下棋吧！`);
+      }
+    }
+  }
+}
+
+restoreSavedGame();
 refreshView();
