@@ -38,6 +38,8 @@ const onlineControls = requireElement<HTMLElement>("#online-controls");
 const connectionBadge = requireElement<HTMLElement>("#connection-status");
 const serverUrlInput = requireElement<HTMLInputElement>("#server-url");
 const connectButton = requireElement<HTMLButtonElement>("#connect-button");
+const serverErrorRow = requireElement<HTMLElement>("#server-error-row");
+const serverErrorText = requireElement<HTMLElement>("#server-error-text");
 const createRoomButton = requireElement<HTMLButtonElement>("#create-room-button");
 const joinRoomInput = requireElement<HTMLInputElement>("#join-room-input");
 const joinRoomButton = requireElement<HTMLButtonElement>("#join-room-button");
@@ -165,12 +167,18 @@ function setMode(newMode: Mode): void {
 
   onlineControls.hidden = !isOnline;
   connectionBadge.hidden = !isOnline;
+  serverErrorRow.hidden = true;
   appSubtitle.textContent = isOnline ? "联机双人国际象棋" : "本地双人国际象棋";
 
   if (!isOnline && wsClient) {
     wsClient.disconnect();
     wsClient = null;
     resetOnlineState();
+  }
+
+  // Auto-connect when switching to online mode
+  if (isOnline && (!wsClient || wsClient.connectionState !== "connected")) {
+    connectToServer();
   }
 
   refreshView();
@@ -231,32 +239,42 @@ function enableRoomButtons(enabled: boolean): void {
 function connectToServer(): void {
   const url = serverUrlInput.value.trim();
   if (!url) {
-    setStatus("请输入服务器地址");
-    return;
+    // Fallback: use current hostname
+    serverUrlInput.value = `ws://${location.hostname}:8787`;
   }
 
   if (wsClient) {
     wsClient.disconnect();
   }
 
+  serverErrorRow.hidden = true;
+  updateConnectionBadge("connecting");
+  setStatus("正在连接服务器…");
+
   wsClient = new WsClient({
-    url,
+    url: serverUrlInput.value.trim(),
     onMessage: handleServerMessage,
     onStateChange: (state) => {
       updateConnectionBadge(state);
 
       if (state === "connected") {
         enableRoomButtons(true);
-        setStatus("已连接到服务器");
-        connectButton.textContent = "断开";
+        serverErrorRow.hidden = true;
+        setStatus("已连接到服务器，可以创建或加入房间了");
       } else if (state === "disconnected") {
         enableRoomButtons(false);
-        setStatus("已断开连接");
-        connectButton.textContent = "连接";
+        // Show reconnect UI if we weren't intentionally disconnecting
+        if (mode === "online") {
+          serverErrorText.textContent = `无法连接到 ${serverUrlInput.value.trim()}`;
+          serverErrorRow.hidden = false;
+          setStatus("连接已断开，请重试");
+        }
       }
     },
     onError: (error) => {
-      setStatus(`错误：${error}`);
+      serverErrorText.textContent = `连接错误：${error}`;
+      serverErrorRow.hidden = false;
+      setStatus("");
     }
   });
 
@@ -461,15 +479,9 @@ modeSelect.addEventListener("change", () => {
   setMode(modeSelect.value as Mode);
 });
 
+// Reconnect button (only shown on connection error)
 connectButton.addEventListener("click", () => {
-  if (wsClient && wsClient.connectionState === "connected") {
-    wsClient.disconnect();
-    wsClient = null;
-    resetOnlineState();
-    setStatus("");
-  } else {
-    connectToServer();
-  }
+  connectToServer();
 });
 
 createRoomButton.addEventListener("click", () => {

@@ -33,17 +33,15 @@
 
         <!-- Online controls (hidden when local) -->
         <div id="online-controls" class="online-controls" hidden>
-          <div class="online-row">
-            <label>
-              服务器：
-              <input id="server-url" type="text" placeholder="ws://host:port" />
-              <script>
-                // Auto-detect WebSocket URL based on current page hostname
-                document.getElementById('server-url').value =
-                  'ws://' + location.hostname + ':8787';
-              </script>
-            </label>
-            <button id="connect-button" type="button">连接</button>
+          <!-- Server URL is auto-detected; hidden by default, shown only on error -->
+          <input id="server-url" type="hidden" />
+          <script>
+            document.getElementById('server-url').value =
+              'ws://' + location.hostname + ':8787';
+          </script>
+          <div id="server-error-row" class="online-row" hidden>
+            <span id="server-error-text" class="error-text"></span>
+            <button id="connect-button" type="button">重新连接</button>
           </div>
           <div class="online-row online-room-actions">
             <div class="room-action-group">

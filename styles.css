@@ -150,6 +150,10 @@ select {
   flex-wrap: wrap;
 }
 
+.online-row[hidden] {
+  display: none;
+}
+
 .online-row input[type="text"] {
   background: rgba(15, 23, 42, 0.95);
   color: inherit;
@@ -248,6 +252,13 @@ select {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+/* --- Server error row --- */
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.82rem;
 }
 
 .room-action-group {
