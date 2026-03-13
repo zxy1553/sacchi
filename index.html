@@ -25,10 +25,35 @@
             模式：
             <select id="mode-select">
               <option value="local">本地对弈</option>
+              <option value="ai">人机对弈</option>
               <option value="online">联机对弈</option>
             </select>
           </label>
           <span id="connection-status" class="connection-badge disconnected" hidden>未连接</span>
+        </div>
+
+        <!-- AI controls (hidden when not ai mode) -->
+        <div id="ai-controls" class="ai-controls" hidden>
+          <div class="ai-row">
+            <label>
+              难度：
+              <select id="ai-difficulty">
+                <option value="easy">简单</option>
+                <option value="medium" selected>中等</option>
+                <option value="hard">困难</option>
+              </select>
+            </label>
+            <label>
+              执棋方：
+              <select id="player-color">
+                <option value="white">白方（先手）</option>
+                <option value="black">黑方</option>
+              </select>
+            </label>
+          </div>
+          <div class="ai-row">
+            <button id="start-ai-game" type="button">开始对弈</button>
+          </div>
         </div>
 
         <!-- Online controls (hidden when local) -->

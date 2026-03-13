@@ -131,6 +131,59 @@ select {
   color: #ef4444;
 }
 
+/* --- AI Controls --- */
+
+.ai-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ai-controls[hidden] {
+  display: none;
+}
+
+.ai-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ai-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.ai-row select {
+  background: rgba(15, 23, 42, 0.95);
+  color: inherit;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+}
+
+.ai-row button {
+  min-height: 2rem;
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  padding: 0.35rem 1.2rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.ai-row button:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
 /* --- Online Controls --- */
 
 .online-controls {
